@@ -7,14 +7,12 @@
  */ 
 
  #include <avr/io.h>
-// #include "thread_ctx.h"
 
 .data
 
 .extern current_thread_id
+.extern next_thread_id
 .extern thread_ctx_ptrs
-
-.text
 
 ; struct thread_ctx offset definitions
 __struct_thread_ctx_regs   = 0
@@ -22,6 +20,11 @@ __struct_thread_ctx_PC     = 32
 __struct_thread_ctx_SP     = 34
 __struct_thread_ctx_stack  = 36
 __struct_thread_ctx_SREG   = 38
+
+
+
+.text
+
 
 
 ;.global TIMER0_COMPA_vect
@@ -50,7 +53,7 @@ save_context:
         push r30                    ; SP - 7
         push r31                    ; SP - 8
 
-        ; =========== GET ADRESS OF THREAD CONTEXT ==========
+        ; =========== GET ADRESS OF CURRENT THREAD CONTEXT ==========
         ; ***** Z = &( *thread_ctx_ptrs[current_thread_id]
         ; prepare r30,r31 as a "complement offset"
         ; r30 <- (current_thread_id)
@@ -73,7 +76,7 @@ save_context:
         mov  r30, r17
         mov  r31, r18
 
-        ; ============= MOVE MCU STATE INTO THREAD CONTEXT ============
+        ; ============= MOVE MCU STATE INTO CURRENT THREAD CONTEXT ============
         ; ***** Save all stacked regs into context
         pop  r17                    ; (r31)  ; SP - 7
         std  Z+__struct_thread_ctx_regs+31, r17
@@ -134,18 +137,22 @@ save_context:
         pop  r18
         std  Z+__struct_thread_ctx_PC, r18
 
-        ; ============= SAVE STACK INTO THREAD CONTEXT =============
+        ; ============= SAVE STACK INTO CURRENT THREAD CONTEXT =============
         ; X <- SP
         ldd  r26, Z+__struct_thread_ctx_SP
         ldd  r27, Z+__struct_thread_ctx_SP+1
         ; Y <- stack
         ldd  r28, Z+__struct_thread_ctx_stack
         ldd  r29, Z+__struct_thread_ctx_stack+1
-        ; =========== STUB TO RETURN NORMALLY ==========
-        push r18
-        push r17
-;TODO : allocate stack before -----------------------
-  stack_copy_loop:
+
+        ; XXXXXXXXXXXXX STUB TO RETURN NORMALLY FROM save_context XXXXXXXXXXXXXXXX
+        push r18 ; XXXXXXX REMOVE THIS                                         XXX
+        push r17 ; XXXXXXX REMOVE THIS                                         XXX
+        ; XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
+
+    ; TODO : test stack allocation before copying  XXXXXX
+    
+    stack_copy_loop:
     ; do {copy_byte();}
         ld   r17, X+
         st   Y+ , r17
@@ -164,9 +171,6 @@ save_context:
         ; ===========================================================
 
         ; now do the opposite,
-        ; TODO : need an index for thread switching
-
-
 
 ;        reti
         ret
