@@ -20,7 +20,8 @@ When creating a new project please create its orphan branch associated, and empt
 
 
 **Note:** it's no problem to have sub-branches for each sketches/project.
-The aim of orphan branch is to clearly 
+The aim of orphan branch is to clearly identify each sketche commit line, and particularly it's starting point.
+
 
 ### List of hosted sketches 
 
