@@ -30,25 +30,25 @@ __struct_thread_ctx_SREG   = 38
 save_context:
         ; ========== SAVE USEFUL REGS TO THE STACK =========
         ; ***** save used regs
-        push r0                     ; SP + 1
-        push r17                    ; SP + 2
-        push r18                    ; SP + 3
+        push r0                     ; SP - 1
+        push r17                    ; SP - 2
+        push r18                    ; SP - 3
+        ; ***** save SREG
+        in   r17, _SFR_IO_ADDR(SREG)
+        push r17                    ; SP - 4
         ; ***** get SP & save old value on the stack
         in   r17, _SFR_IO_ADDR(SPL)
         in   r18, _SFR_IO_ADDR(SPH)
         ; restore old value
-        subi r17, 5 ; offset 5 : r18, r17, r0 & PC_before_interrupt
+        subi r17, lo8(-4) ; SP to be restored just before returning when switching back
         ; propagate carry to high byte
-        sbci r18, 0
-        ; save this
-        push r17                    ; SP + 4
-        push r18                    ; SP + 5
-        ; ***** save Z to be used
-        push r30                    ; SP + 6
-        push r31                    ; SP + 7
-        ; ***** save SREG
-        in   r17, _SFR_IO_ADDR(SREG)
-        push r17                    ; SP + 8
+        sbci r18, hi8(-4)
+        ; save computed SP value
+        push r17                    ; SP - 5
+        push r18                    ; SP - 6
+        ; ***** save Z
+        push r30                    ; SP - 7
+        push r31                    ; SP - 8
 
         ; =========== GET ADRESS OF THREAD CONTEXT ==========
         ; ***** Z = &( *thread_ctx_ptrs[current_thread_id]
@@ -56,7 +56,7 @@ save_context:
         ; r30 <- (current_thread_id)
         lds  r30, current_thread_id
         ; r31 <- 0 ; address high byte
-        mov  0 , r31
+        ldi  r31, 0
         ; r30 <- r30<<1
         lsl  r30
         ; r31 <- r31<<1 + C
@@ -75,19 +75,19 @@ save_context:
 
         ; ============= MOVE MCU STATE INTO THREAD CONTEXT ============
         ; ***** Save all stacked regs into context
-        pop  r17                    ; (SREG) ; SP + 7
-        std  Z+__struct_thread_ctx_SREG, r17
-        pop  r17                    ; (r31)  ; SP + 6
+        pop  r17                    ; (r31)  ; SP - 7
         std  Z+__struct_thread_ctx_regs+31, r17
-        pop  r17                    ; (r30)  ; SP + 5
+        pop  r17                    ; (r30)  ; SP - 6
         std  Z+__struct_thread_ctx_regs+30, r17
-        pop  r17                    ; (SPH)  ; SP + 4
+        pop  r17                    ; (SPH)  ; SP - 5
         std  Z+__struct_thread_ctx_SP+1, r17
-        pop  r17                    ; (SPL)  ; SP + 3
+        pop  r17                    ; (SPL)  ; SP - 4
         std  Z+__struct_thread_ctx_SP, r17
-        pop  r17                    ; (r18)  ; SP + 2
+        pop  r17                    ; (SREG) ; SP - 3
+        std  Z+__struct_thread_ctx_SREG, r17
+        pop  r17                    ; (r18)  ; SP - 2
         std  Z+__struct_thread_ctx_regs+18, r17
-        pop  r17                    ; (r17)  ; SP + 1
+        pop  r17                    ; (r17)  ; SP - 1
         std  Z+__struct_thread_ctx_regs+17, r17
         pop  r17                    ; (r0)   ; SP
         std  Z+__struct_thread_ctx_regs+0, r17
@@ -131,8 +131,8 @@ save_context:
         pop  r17
         std  Z+__struct_thread_ctx_PC+1, r17
         ; lo8(PC)
-        pop  r17
-        std  Z+__struct_thread_ctx_PC, r17
+        pop  r18
+        std  Z+__struct_thread_ctx_PC, r18
 
         ; ============= SAVE STACK INTO THREAD CONTEXT =============
         ; X <- SP
@@ -141,20 +141,20 @@ save_context:
         ; Y <- stack
         ldd  r28, Z+__struct_thread_ctx_stack
         ldd  r29, Z+__struct_thread_ctx_stack+1
-        ; "pop" PC
-        subi r28, lo8(-2)
-        sbci r29, hi8(-2)
-
+        ; =========== STUB TO RETURN NORMALLY ==========
+        push r18
+        push r17
+;TODO : allocate stack before -----------------------
   stack_copy_loop:
     ; do {copy_byte();}
         ld   r17, X+
         st   Y+ , r17
-    ; while (X != RAMEND)
+    ; while (X != RAMEND+1)
         ; test low_byte first
-        cpi  r26, lo8(RAMEND) ; 'true' each 256 bytes
+        cpi  r26, lo8(RAMEND+1) ; 'true' each 256 bytes
         brne stack_copy_loop
         ; then hibyte
-        cpi  r27, hi8(RAMEND) ; end reached
+        cpi  r27, hi8(RAMEND+1) ; end reached
         brne stack_copy_loop
     ; loop ended
 
@@ -165,8 +165,6 @@ save_context:
 
         ; now do the opposite,
         ; TODO : need an index for thread switching
-
-
 
 
 

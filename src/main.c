@@ -32,6 +32,7 @@ void main(void) {
     debug_puts(str);
     thread_ctx_ptrs[0] = malloc(sizeof(thread_ctx));
     thread_ctx_ptrs[1] = malloc(sizeof(thread_ctx));
+    thread_ctx_ptrs[1]->_stack = malloc(0xFF);
 
     uint8_t toto[sizeof(thread_ctx)] = {
         0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09,
@@ -59,6 +60,8 @@ void main(void) {
     debug_puts(str);
     snprintf(str, 64, "SREG: %x\n", pctx->_SREG);
     debug_puts(str);
+
+    save_context();
 }
 
 /*void main (void)
