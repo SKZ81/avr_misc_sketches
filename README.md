@@ -4,8 +4,16 @@ An attempt to create some threading tools and routines for the 8bit AVR chips.
 
 ## Tree description
 
+```
 ├── README.md
 └── src
+    ├── main.c
+    ├── makefile
+    └── threading
+        ├── scheduler.S
+        ├── scheduler.h
+        └── thread_ctx.h
+```
 
 ## Changelog
 
