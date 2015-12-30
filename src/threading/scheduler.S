@@ -25,12 +25,11 @@ __struct_thread_ctx_SREG   = 38
 
 .text
 
+;.global save_context
+;save_context:
 
-
-;.global TIMER0_COMPA_vect
-;TIMER0_COMPA_vect:
-.global save_context
-save_context:
+.global TIMER0_COMPA_vect
+TIMER0_COMPA_vect:
         ; ========== SAVE USEFUL REGS TO THE STACK =========
         ; ***** save used regs
         push r0                     ; SP - 1
@@ -131,11 +130,11 @@ save_context:
 
         ; ***** get PC from (SP);(SP-1) and save in it context
         ; hi8(PC)
-        pop  r17
-        std  Z+__struct_thread_ctx_PC+1, r17
-        ; lo8(PC)
         pop  r18
-        std  Z+__struct_thread_ctx_PC, r18
+        std  Z+__struct_thread_ctx_PC+1, r18
+        ; lo8(PC)
+        pop  r17
+        std  Z+__struct_thread_ctx_PC, r17
 
         ; ============= SAVE STACK INTO CURRENT THREAD CONTEXT =============
         ; X <- SP
@@ -146,8 +145,8 @@ save_context:
         ldd  r29, Z+__struct_thread_ctx_stack+1
 
         ; XXXXXXXXXXXXX STUB TO RETURN NORMALLY FROM save_context XXXXXXXXXXXXXXXX
-        push r18 ; XXXXXXX REMOVE THIS                                         XXX
-        push r17 ; XXXXXXX REMOVE THIS                                         XXX
+        ;push r18 ; XXXXXXX REMOVE THIS                                         XXX
+        ;push r17 ; XXXXXXX REMOVE THIS                                         XXX
         ; XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
 
     ; TODO : test stack allocation before copying  XXXXXX
@@ -167,10 +166,105 @@ save_context:
 
 
         ; ===========================================================
-        ; ===                   CONTEXT SWITCH                    ===
+        ; ===                     CONTEXT SWITCH                  ===
         ; ===========================================================
 
-        ; now do the opposite,
+        ; =========== GET ADRESS OF NEXT THREAD CONTEXT ==========
+        ; ***** Z = &( *thread_ctx_ptrs[next_thread_id]
+        ; prepare r30,r31 as a "complement offset"
+        ; r30 <- (next_thread_id)
+        lds  r30, next_thread_id
+        ; r31 <- 0 ; address high byte
+        ldi  r31, 0
+        ; r30 <- r30<<1
+        lsl  r30
+        ; r31 <- r31<<1 + C
+        rol  r31
 
-;        reti
-        ret
+        ; Z <- thread_ctx_ptrs[next_thread_id]
+        ;    == ((thread_ctx*)next_thread_id)<<1 - (-thread_ctx_ptrs)
+        subi r30, lo8(-(thread_ctx_ptrs))
+        sbci r31, hi8(-(thread_ctx_ptrs))
+
+        ; Z <- r17,r18 <- *thread_ctx_ptrs[next_thread_id]
+        ld   r17, Z
+        ldd  r18, Z+1
+        mov  r30, r17
+        mov  r31, r18
+
+        ; X <- (*thread_ctx_ptrs[next_thread_id]).SP
+        ldd  r26, Z+__struct_thread_ctx_SP
+        ldd  r27, Z+__struct_thread_ctx_SP+1
+        
+        ; Y <- (*thread_ctx_ptrs[next_thread_id]).stack
+        ldd  r28, Z+__struct_thread_ctx_stack
+        ldd  r29, Z+__struct_thread_ctx_stack+1
+
+    ; TODO : test stack allocation before copying  XXXXXX
+    
+    stack_restore_loop:
+    ; do {copy_byte();}
+        ld   r17, Y+
+        st   X+ , r17
+    ; while (X != RAMEND+1)
+        ; test low_byte first
+        cpi  r26, lo8(RAMEND+1) ; 'true' each 256 bytes
+        brne stack_restore_loop
+        ; then hibyte
+        cpi  r27, hi8(RAMEND+1) ; end reached
+        brne stack_restore_loop
+    ; loop ended
+
+        ; ***** Restore SP
+        ; SP <- (*thread_ctx_ptrs[next_thread_id]).SP
+        ldd  r17, Z+__struct_thread_ctx_SP
+        ldd  r18, Z+__struct_thread_ctx_SP+1
+        out  _SFR_IO_ADDR(SPL), r17
+        out  _SFR_IO_ADDR(SPH), r18
+
+        ; ***** Restore PC into stack
+        ldd  r17, Z+__struct_thread_ctx_PC
+        ldd  r18, Z+__struct_thread_ctx_PC+1
+        push r17
+        push r18
+
+        ; ***** Restore common registers
+        ldd  r0 , Z+__struct_thread_ctx_regs+0
+        ldd  r1 , Z+__struct_thread_ctx_regs+1
+        ldd  r2 , Z+__struct_thread_ctx_regs+2
+        ldd  r3 , Z+__struct_thread_ctx_regs+3
+        ldd  r4 , Z+__struct_thread_ctx_regs+4
+        ldd  r5 , Z+__struct_thread_ctx_regs+5
+        ldd  r6 , Z+__struct_thread_ctx_regs+6
+        ldd  r7 , Z+__struct_thread_ctx_regs+7
+        ldd  r8 , Z+__struct_thread_ctx_regs+8
+        ldd  r9 , Z+__struct_thread_ctx_regs+9
+        ldd  r10, Z+__struct_thread_ctx_regs+10
+        ldd  r11, Z+__struct_thread_ctx_regs+11
+        ldd  r12, Z+__struct_thread_ctx_regs+11
+        ldd  r13, Z+__struct_thread_ctx_regs+11
+        ldd  r14, Z+__struct_thread_ctx_regs+11
+        ldd  r15, Z+__struct_thread_ctx_regs+11
+        ldd  r16, Z+__struct_thread_ctx_regs+11
+        ldd  r17, Z+__struct_thread_ctx_regs+11
+        ldd  r18, Z+__struct_thread_ctx_regs+11
+        ldd  r19, Z+__struct_thread_ctx_regs+11
+        ldd  r20, Z+__struct_thread_ctx_regs+20
+        ldd  r21, Z+__struct_thread_ctx_regs+21
+        ldd  r22, Z+__struct_thread_ctx_regs+22
+        ldd  r23, Z+__struct_thread_ctx_regs+23
+        ldd  r24, Z+__struct_thread_ctx_regs+24
+        ldd  r25, Z+__struct_thread_ctx_regs+25
+        ldd  r26, Z+__struct_thread_ctx_regs+26
+        ldd  r27, Z+__struct_thread_ctx_regs+27
+        ldd  r28, Z+__struct_thread_ctx_regs+28
+        ldd  r29, Z+__struct_thread_ctx_regs+29
+        ldd  r30, Z+__struct_thread_ctx_regs+30
+        ldd  r31, Z+__struct_thread_ctx_regs+31
+
+        ; ***** Restore SREG
+        ldd  r17, Z+__struct_thread_ctx_SREG
+        out  _SFR_IO_ADDR(SREG), r17
+        
+        ;ret
+        reti
