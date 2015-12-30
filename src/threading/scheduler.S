@@ -138,10 +138,13 @@ switch_context:
 
     ; TODO : test stack allocation before copying  XXXXXX
     
+    ; prepare Y / r17 value for loop optimisation (st before ld then shortcut test)
+    ld   r17, Y- 
+
     stack_copy_loop:
     ; do {copy_byte();}
-        ld   r17, X+
-        st   Y+ , r17
+        st   Y+ , r17 ; first st has no effect thanks to loop initialisation.
+        ld   r17, X+  ;
     ; while (X != RAMEND+1)
         ; test low_byte first
         cpi  r26, lo8(RAMEND+1) ; 'true' each 256 bytes
@@ -152,9 +155,9 @@ switch_context:
     ; loop ended
 
 
-        ; ===========================================================
-        ; ===                     CONTEXT SWITCH                  ===
-        ; ===========================================================
+        ; ==============================================================
+        ; ===                       CONTEXT SWITCH                   ===
+        ; ==============================================================
 
         ; =========== GET ADRESS OF NEXT THREAD CONTEXT ==========
         ; ***** Z = &( *thread_ctx_ptrs[next_thread_id]
@@ -189,10 +192,13 @@ switch_context:
 
     ; TODO : test stack allocation before copying  XXXXXX
     
+    ; prepare X / r17 value for loop optimisation (st before ld then shortcut test)
+    ld   r17, X- 
+
     stack_restore_loop:
     ; do {copy_byte();}
-        ld   r17, Y+
         st   X+ , r17
+        ld   r17, Y+
     ; while (X != RAMEND+1)
         ; test low_byte first
         cpi  r26, lo8(RAMEND+1) ; 'true' each 256 bytes
