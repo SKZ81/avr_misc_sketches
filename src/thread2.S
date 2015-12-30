@@ -29,7 +29,7 @@ thread2_start:
 
 	; ===== PREPARE THREAD2 CONTEXT =====
 	; Z <- thread2_ctx
-	mov  r20, r24
+	mov  r30, r24
 	mov  r31, r25 ; r30,r31 are call-used registers, no need to save them
 
 	ldi  r24, lo8(thread2_loop)
