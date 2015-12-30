@@ -11,12 +11,12 @@
 
 .text
 
-;.global switch_context
-;switch_context:
+.global switch_context
+
 
 .global TIMER0_COMPA_vect
 TIMER0_COMPA_vect:
-;switch_context:
+switch_context:
         ; ========== SAVE USEFUL REGS TO THE STACK =========
         ; ***** save used regs
         push r0                     ; SP - 1
@@ -131,10 +131,10 @@ TIMER0_COMPA_vect:
         ldd  r28, Z+__struct_thread_ctx_stack
         ldd  r29, Z+__struct_thread_ctx_stack+1
 
-        ; XXXXXXXXXXXXX STUB TO RETURN NORMALLY FROM save_context XXXXXXXXXXXXXXXX
-        ;push r18 ; XXXXXXX REMOVE THIS                                         XXX
-        ;push r17 ; XXXXXXX REMOVE THIS                                         XXX
-        ; XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
+        ; XXXXXXXXXXXXX STUB TO RETURN NORMALLY FROM save_context XXXXXXXXXX
+        ; push r18 ; XXXXXXX REMOVE THIS                                 XXX
+        ; push r17 ; XXXXXXX REMOVE THIS                                 XXX
+        ; XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
 
     ; TODO : test stack allocation before copying  XXXXXX
     
