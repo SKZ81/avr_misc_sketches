@@ -70,7 +70,7 @@ void main(void) {
 
     sei();
 
-    thread2_start(thread_ctx_ptrs[1]);
+    thread2_start(thread_ctx_ptrs[0]);
 
     while(1) {
         debug_puts("^**^\n");
