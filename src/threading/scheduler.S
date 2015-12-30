@@ -139,7 +139,7 @@ switch_context:
     ; TODO : test stack allocation before copying  XXXXXX
     
     ; prepare Y / r17 value for loop optimisation (st before ld then shortcut test)
-    ld   r17, Y- 
+    ld   r17, -Y
 
     stack_copy_loop:
     ; do {copy_byte();}
@@ -193,7 +193,7 @@ switch_context:
     ; TODO : test stack allocation before copying  XXXXXX
     
     ; prepare X / r17 value for loop optimisation (st before ld then shortcut test)
-    ld   r17, X- 
+    ld   r17, -X
 
     stack_restore_loop:
     ; do {copy_byte();}
