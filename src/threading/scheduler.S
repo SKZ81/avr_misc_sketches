@@ -234,14 +234,14 @@ switch_context:
         ldd  r9 , Z+__struct_thread_ctx_regs+9
         ldd  r10, Z+__struct_thread_ctx_regs+10
         ldd  r11, Z+__struct_thread_ctx_regs+11
-        ldd  r12, Z+__struct_thread_ctx_regs+11
-        ldd  r13, Z+__struct_thread_ctx_regs+11
-        ldd  r14, Z+__struct_thread_ctx_regs+11
-        ldd  r15, Z+__struct_thread_ctx_regs+11
-        ldd  r16, Z+__struct_thread_ctx_regs+11
-        ldd  r17, Z+__struct_thread_ctx_regs+11
-        ldd  r18, Z+__struct_thread_ctx_regs+11
-        ldd  r19, Z+__struct_thread_ctx_regs+11
+        ldd  r12, Z+__struct_thread_ctx_regs+12
+        ldd  r13, Z+__struct_thread_ctx_regs+13
+        ldd  r14, Z+__struct_thread_ctx_regs+14
+        ldd  r15, Z+__struct_thread_ctx_regs+15
+        ldd  r16, Z+__struct_thread_ctx_regs+16
+        ldd  r17, Z+__struct_thread_ctx_regs+17
+        ldd  r18, Z+__struct_thread_ctx_regs+18
+        ldd  r19, Z+__struct_thread_ctx_regs+19
         ldd  r20, Z+__struct_thread_ctx_regs+20
         ldd  r21, Z+__struct_thread_ctx_regs+21
         ldd  r22, Z+__struct_thread_ctx_regs+22
@@ -250,14 +250,20 @@ switch_context:
         ldd  r25, Z+__struct_thread_ctx_regs+25
         ldd  r26, Z+__struct_thread_ctx_regs+26
         ldd  r27, Z+__struct_thread_ctx_regs+27
+        ldd  r28, Z+__struct_thread_ctx_regs+30
+        ldd  r29, Z+__struct_thread_ctx_regs+31
+        push 28
+        push 29
         ldd  r28, Z+__struct_thread_ctx_regs+28
         ldd  r29, Z+__struct_thread_ctx_regs+29
-        ldd  r30, Z+__struct_thread_ctx_regs+30
-        ldd  r31, Z+__struct_thread_ctx_regs+31
 
         ; ***** Restore SREG
+        push r17
         ldd  r17, Z+__struct_thread_ctx_SREG
         out  _SFR_IO_ADDR(SREG), r17
         
+        pop r17
+        pop r31
+        pop r30
         ;ret
         reti
