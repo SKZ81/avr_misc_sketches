@@ -1,4 +1,4 @@
-// ============  <DEBUG> ============
+                        // ============  <DEBUG> ============
     #include <stdio.h>
 
     /* This port correponds to the "-W 0x20,-" command line option. */
@@ -24,65 +24,55 @@
 
 thread_ctx *thread_ctx_ptrs[2];
 uint8_t current_thread_id=1;
+uint8_t next_thread_id=0;
+
+uint8_t stack_th0[10] = {0xD0, 0xD1, 0xD2, 0xD3, 0xD4, 0xD5, 0xD6, 0xD7, 0xD8, 0xD9}; 
+uint8_t thread0_ctx[sizeof(thread_ctx)] = {
+	0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09,
+	0x10, 0x11, 0x12, 0x13, 0x14, 0x15, 0x16, 0x17, 0x18, 0x19,
+	0x20, 0x21, 0x22, 0x22, 0x23, 0x24, 0x25, 0x26, 0x27, 0x28,
+	0x30, 0x31,                             // regs
+	0x00, 0x00,								// PC
+	0xF6, 0X08,                             // SP
+	0x00, 0x00,								// stack
+	0x00                                    // SREG
+};
+
+#define lo8(x) (uint8_t)(x)
+#define hi8(x) (uint8_t)(((uint16_t)x)>>8)
+
+extern void thread2_start();
 
 void main(void) {
-    char str[64];
-    snprintf(str, 32, "%d\n", sizeof(thread_ctx));
-    debug_puts("coucou : ");
-    debug_puts(str);
-    thread_ctx_ptrs[0] = malloc(sizeof(thread_ctx));
+//    thread0_ctx[32] = lo8(&&after_while);
+//    thread0_ctx[33] = hi8(&&after_while);
+	thread0_ctx[36] = lo8(stack_th0);
+	thread0_ctx[37] = hi8(stack_th0);
+
+    thread_ctx_ptrs[0] = (thread_ctx*)thread0_ctx;
+
     thread_ctx_ptrs[1] = malloc(sizeof(thread_ctx));
     thread_ctx_ptrs[1]->_stack = malloc(0xFF);
 
-    uint8_t toto[sizeof(thread_ctx)] = {
-        0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09,
-        0x10, 0x11, 0x12, 0x13, 0x14, 0x15, 0x16, 0x17, 0x18, 0x19,
-        0x20, 0x21, 0x22, 0x23, 0x24, 0x25, 0x26, 0x27, 0x28, 0x29,
-        0x30, 0x31, // regs
-        0x9c, 0x9b, // PC (9C)
-        0x59, 0X58, // SP (59)
-        0xAC, 0x57, // stack (57AC)
-        0xFF // SREG
-    };
+    thread_ctx *pctx = thread_ctx_ptrs[0];
 
-    thread_ctx *pctx = (thread_ctx*)toto;
-
-    for (int i=0; i<32; i++) {
-        snprintf(str, 64, "r%d: %x\n", i, pctx->_regs[i]);
-        debug_puts(str);
-    }
-
-    snprintf(str, 64, "PC: %x\n", pctx->_PC);
-    debug_puts(str);
-    snprintf(str, 64, "SP: %x\n", pctx->_SP);
-    debug_puts(str);
-    snprintf(str, 64, "stack@: %x\n", pctx->_stack);
-    debug_puts(str);
-    snprintf(str, 64, "SREG: %x\n", pctx->_SREG);
-    debug_puts(str);
-
-    save_context();
-}
-
-/*void main (void)
-{
+    
     // setMode(PORTC, output)
     DDRC = 0xff;
     // setMode(PORTB, input)
     DDRB = 0x00;
-    // timer_freq = clock_freq/8
-    TCCR0B = 0x02;
+    // timer_freq = clock_freq/64
+    TCCR0B = 0x03;
     // enable timer0 COMP_A interrupt mask
     TIMSK0 = 0x02;
-    // after 5*8 = 40 cycles
-    OCR0A = 0x05;
+    // after 64*8 = 512 cycles
+    OCR0A = 0x08;
 
-    // enable interrupts mask
     sei();
 
-    // ==== LOOP ====
-    while(1) {
-        PORTC = PINB + 1;
-    }
-}*/
+    thread2_start(thread_ctx_ptrs[1]);
 
+    while(1) {
+        debug_puts("^**^\n");
+    }
+}
