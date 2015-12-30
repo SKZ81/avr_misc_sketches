@@ -6,30 +6,17 @@
  *  Author: jcahier
  */ 
 
- #include <avr/io.h>
-
-.data
-
-.extern current_thread_id
-.extern next_thread_id
-.extern thread_ctx_ptrs
-
-; struct thread_ctx offset definitions
-__struct_thread_ctx_regs   = 0
-__struct_thread_ctx_PC     = 32
-__struct_thread_ctx_SP     = 34
-__struct_thread_ctx_stack  = 36
-__struct_thread_ctx_SREG   = 38
-
-
+#include <avr/io.h>
+#include "thread_ctx.h"
 
 .text
 
-;.global save_context
-;save_context:
+;.global switch_context
+;switch_context:
 
 .global TIMER0_COMPA_vect
 TIMER0_COMPA_vect:
+;switch_context:
         ; ========== SAVE USEFUL REGS TO THE STACK =========
         ; ***** save used regs
         push r0                     ; SP - 1

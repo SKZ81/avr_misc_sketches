@@ -8,7 +8,25 @@
 
 #ifndef SCHEDULER_H_
 
-void save_context(void);
+#include "thread_ctx.h"
+
+#ifdef __ASSEMBLER__
+
+/* Assembler header */
+.extern current_thread_id 
+.extern next_thread_id
+.extern thread_ctx_ptrs
+
+.global switch_context
+
+#elif
+ /* standard C header */
+
+extern uint8_t current_thread_id;
+extern uint8_t next_thread_id;
+extern thread_ctx* thread_ctx_ptrs[];
+
+void switch_context(void);
 
 #define SCHEDULER_H_
 
