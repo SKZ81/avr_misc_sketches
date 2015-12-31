@@ -139,8 +139,8 @@ switch_context:
     ; TODO : test stack allocation before copying  XXXXXX
     
     ; prepare Y / r17 value for loop optimisation (st before ld then shortcut test)
-    ld   r17, -Y
-
+/*     ld   r17, -Y */
+/*
     stack_copy_loop:
     ; do {copy_byte();}
         st   Y+ , r17 ; first st has no effect thanks to loop initialisation.
@@ -153,7 +153,27 @@ switch_context:
         cpi  r27, hi8(RAMEND+1) ; end reached
         brne stack_copy_loop
     ; loop ended
+*/
 
+    /* NB : X = SP
+            Y = *(ctx).stack
+    */
+    stack_copy_loop:
+        /* if (SP == 8FF) then goto end */
+        ; test low_byte first
+        cpi  r26, lo8(RAMEND) ; 'true' each 256 bytes
+        brne stack_copy_loop_2
+        ; then hibyte
+        cpi  r27, hi8(RAMEND) ; end reached
+        brne stack_copy_loop_2
+        jmp stack_copy_loop_end
+        /* get(SP++) */
+    stack_copy_loop_2:
+        ld   r17, X+
+        /* write(stack++) */
+        st   Y+, r17
+        jmp  stack_copy_loop
+    stack_copy_loop_end:
 
         ; ==============================================================
         ; ===                       CONTEXT SWITCH                   ===
@@ -194,7 +214,7 @@ switch_context:
     
     ; prepare X / r17 value for loop optimisation (st before ld then shortcut test)
     ld   r17, -X
-
+/*
     stack_restore_loop:
     ; do {copy_byte();}
         st   X+ , r17
@@ -207,6 +227,23 @@ switch_context:
         cpi  r27, hi8(RAMEND+1) ; end reached
         brne stack_restore_loop
     ; loop ended
+*/
+    stack_restore_loop:
+        /* if (SP == 8FF) then goto end */
+        ; test low_byte first
+        cpi  r26, lo8(RAMEND) ; 'true' each 256 bytes
+        brne stack_restore_loop_2
+        ; then hibyte
+        cpi  r27, hi8(RAMEND) ; end reached
+        brne stack_restore_loop_2
+        jmp stack_restore_loop_end
+        /* get(SP++) */
+    stack_restore_loop_2:
+        ld   r17, X+
+        /* write(stack++) */
+        st   Y+, r17
+        jmp  stack_restore_loop
+    stack_restore_loop_end:
 
         ; ***** Restore SP
         ; SP <- (*thread_ctx_ptrs[next_thread_id]).SP
