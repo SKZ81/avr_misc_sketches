@@ -1,7 +1,7 @@
 /*
  * thread2.S : another thread that do some debug_puts
  *
- * Created: 18/12/2015 21:26:14
+ * Created: 
  *  Author: jcahier
  */ 
 
