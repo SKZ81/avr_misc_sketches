@@ -137,43 +137,43 @@ switch_context:
         ; XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
 
     ; TODO : test stack allocation before copying  XXXXXX
-    
-    ; prepare Y / r17 value for loop optimisation (st before ld then shortcut test)
-/*     ld   r17, -Y */
-/*
-    stack_copy_loop:
-    ; do {copy_byte();}
-        st   Y+ , r17 ; first st has no effect thanks to loop initialisation.
-        ld   r17, X+  ;
-    ; while (X != RAMEND+1)
+
+        ; X++  : SP points unpushed (already poped) value
+        subi r26, lo8(-1)
+        sbci r27, hi8(-1)    ; carry propagation
+
+        jmp  stack_copy_eval ; while (X != RAMEND+1) {
+    stack_copy_loop:         ; {
+        ld   r17, X+
+        st   Y+, r17         ;     *(Y++) = *(X++);
+    stack_copy_eval:         ; }
+        ; *** while loop -- (X != RAMEND+1) evaluation
         ; test low_byte first
         cpi  r26, lo8(RAMEND+1) ; 'true' each 256 bytes
-        brne stack_copy_loop
+        brne stack_copy_loop ; false, go back into loop
         ; then hibyte
-        cpi  r27, hi8(RAMEND+1) ; end reached
-        brne stack_copy_loop
-    ; loop ended
-*/
+        cpi  r27, hi8(RAMEND+1) ; end reached ?
+        brne stack_copy_loop ; nope, go back into loop
+        ; loop ended
 
-    /* NB : X = SP
-            Y = *(ctx).stack
-    */
-    stack_copy_loop:
-        /* if (SP == 8FF) then goto end */
-        ; test low_byte first
-        cpi  r26, lo8(RAMEND) ; 'true' each 256 bytes
-        brne stack_copy_loop_2
-        ; then hibyte
-        cpi  r27, hi8(RAMEND) ; end reached
-        brne stack_copy_loop_2
-        jmp stack_copy_loop_end
-        /* get(SP++) */
-    stack_copy_loop_2:
-        ld   r17, X+
-        /* write(stack++) */
-        st   Y+, r17
-        jmp  stack_copy_loop
-    stack_copy_loop_end:
+
+        ; ==============================================================
+        ; ===                       SCHEDULER SWITCH                 ===
+        ; ==============================================================
+        ; X <- next_thread_id
+        ldi  r26, lo8(next_thread_id)
+        ldi  r27, hi8(next_thread_id)
+        ; Y <- current_thread_id
+        ldi  r28, lo8(current_thread_id)
+        ldi  r29, hi8(current_thread_id)
+
+        ld   r17, Y
+        ld   r30, X
+        st   X, r17
+        st   Y, r30
+
+        ; Z <- *next_thread_i
+        eor  r31, r31
 
         ; ==============================================================
         ; ===                       CONTEXT SWITCH                   ===
@@ -182,10 +182,11 @@ switch_context:
         ; =========== GET ADRESS OF NEXT THREAD CONTEXT ==========
         ; ***** Z = &( *thread_ctx_ptrs[next_thread_id]
         ; prepare r30,r31 as a "complement offset"
-        ; r30 <- (next_thread_id)
-        lds  r30, next_thread_id
+; NB : already done by scheduler switch
+        ; r30 <- *next_thread_id
+;        lds  r30, next_thread_id
         ; r31 <- 0 ; address high byte
-        ldi  r31, 0
+;        ldi  r31, 0
         ; r30 <- r30<<1
         lsl  r30
         ; r31 <- r31<<1 + C
@@ -211,39 +212,21 @@ switch_context:
         ldd  r29, Z+__struct_thread_ctx_stack+1
 
     ; TODO : test stack allocation before copying  XXXXXX
-    
-    ; prepare X / r17 value for loop optimisation (st before ld then shortcut test)
-    ld   r17, -X
-/*
-    stack_restore_loop:
-    ; do {copy_byte();}
-        st   X+ , r17
+        subi r26, lo8(-1)
+        sbci r27, hi8(-1)       ; X++;
+
+        jmp  stack_restore_eval ; while (X != RAMEND+1)
+    stack_restore_loop:         ; {do
         ld   r17, Y+
-    ; while (X != RAMEND+1)
-        ; test low_byte first
-        cpi  r26, lo8(RAMEND+1) ; 'true' each 256 bytes
-        brne stack_restore_loop
-        ; then hibyte
-        cpi  r27, hi8(RAMEND+1) ; end reached
-        brne stack_restore_loop
-    ; loop ended
-*/
-    stack_restore_loop:
-        /* if (SP == 8FF) then goto end */
+        st   X+, r17            ; *(X++) = *(Y++);
+    stack_restore_eval:         ; }
         ; test low_byte first
         cpi  r26, lo8(RAMEND) ; 'true' each 256 bytes
-        brne stack_restore_loop_2
+        brne stack_restore_loop ; false, go back into loop
         ; then hibyte
-        cpi  r27, hi8(RAMEND) ; end reached
-        brne stack_restore_loop_2
-        jmp stack_restore_loop_end
-        /* get(SP++) */
-    stack_restore_loop_2:
-        ld   r17, X+
-        /* write(stack++) */
-        st   Y+, r17
-        jmp  stack_restore_loop
-    stack_restore_loop_end:
+        cpi  r27, hi8(RAMEND) ; end reached ?
+        brne stack_restore_loop ; nope, go back into loop
+        ; loop ended
 
         ; ***** Restore SP
         ; SP <- (*thread_ctx_ptrs[next_thread_id]).SP
