@@ -32,8 +32,8 @@ thread2_start:
 	mov  r30, r24
 	mov  r31, r25 ; r30,r31 are call-used registers, no need to save them
 
-	ldi  r24, lo8(thread2_loop)
-	ldi  r25, hi8(thread2_loop) ; r24,r25 are call-used input registers, let s squash them
+	ldi  r24, lo8(pm(thread2_loop))
+	ldi  r25, hi8(pm(thread2_loop)) ; r24,r25 are call-used input registers, let s squash them
 
 	; (*thread2_ctx).PC = thread2_loop;
 	std  Z+__struct_thread_ctx_PC, r24
